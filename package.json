@@ -1,0 +1,37 @@
+{
+  "name": "video-compressor",
+  "version": "1.0.0",
+  "description": "A modern web application that compresses videos to 8MB or 50MB using client-side processing",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx http-server -p 8000 -c-1",
+    "dev": "npx http-server -p 8000 -c-1 -o",
+    "serve": "python -m http.server 8000",
+    "test": "echo \"Open index.html in a modern browser to test the application\""
+  },
+  "keywords": [
+    "video",
+    "compression",
+    "ffmpeg",
+    "webassembly",
+    "browser",
+    "client-side",
+    "dark-mode"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "your-repository-url"
+  },
+  "bugs": {
+    "url": "your-repository-url/issues"
+  },
+  "homepage": "your-repository-url#readme"
+} 

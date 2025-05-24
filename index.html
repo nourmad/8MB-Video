@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Compressor - 8MB & 50MB</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js"></script>
+    <script src="https://unpkg.com/@ffmpeg/util@0.12.1/dist/umd/util.js"></script>
+</head>
+<body>
+    <!-- Full-screen drag overlay -->
+    <div class="drag-overlay" id="dragOverlay">
+        <div class="drag-overlay-content">
+            <h3>Drop your video here</h3>
+            <p>Release to upload and compress</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <header class="header">
+            <h1>Video Compressor</h1>
+            <p>Compress videos to 8MB or 50MB - All processing happens in your browser</p>
+        </header>
+
+        <main class="main">
+            <!-- Upload Section -->
+            <div class="upload-section" id="uploadSection">
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="7,10 12,15 17,10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                    </div>
+                    <h3>Drop your video anywhere or click to browse</h3>
+                    <p>Supports MP4, AVI, MOV, MKV, WebM, and more</p>
+                    <button class="upload-btn" id="uploadBtn" onclick="document.getElementById('fileInput').click(); return false;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="7,10 12,15 17,10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                        Choose Video File
+                    </button>
+                    <input type="file" id="fileInput" accept="video/*" style="opacity:0; position:absolute; z-index:-1;">
+                </div>
+            </div>
+
+            <!-- Processing Section -->
+            <div class="processing-section" id="processingSection" style="display: none;">
+                <div class="video-info" id="videoInfo"></div>
+                
+                <div class="compression-options">
+                    <h3>Choose compression size:</h3>
+                    <div class="option-buttons">
+                        <button class="option-btn" data-size="8">
+                            <span class="size">8MB</span>
+                            <span class="desc">Highly compressed, good for messaging</span>
+                        </button>
+                        <button class="option-btn" data-size="50">
+                            <span class="size">50MB</span>
+                            <span class="desc">Better quality, good for social media</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="progress-section" id="progressSection" style="display: none;">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <p class="progress-text" id="progressText">Initializing...</p>
+                    <button class="cancel-btn" id="cancelBtn">Cancel</button>
+                </div>
+
+                <div class="result-section" id="resultSection" style="display: none;">
+                    <div class="result-info">
+                        <h3>Compression Complete!</h3>
+                        <div class="file-comparison">
+                            <div class="file-stat">
+                                <span class="label">Original size:</span>
+                                <span class="value" id="originalSize"></span>
+                            </div>
+                            <div class="file-stat">
+                                <span class="label">Compressed size:</span>
+                                <span class="value" id="compressedSize"></span>
+                            </div>
+                            <div class="file-stat">
+                                <span class="label">Reduction:</span>
+                                <span class="value reduction" id="reduction"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="download-actions">
+                        <button class="download-btn" id="downloadBtn">Download Compressed Video</button>
+                        <button class="reset-btn" id="resetBtn">Compress Another Video</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <p>All processing is done locally in your browser. Your videos never leave your device.</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html> 

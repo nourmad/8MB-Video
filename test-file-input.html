@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>File Input Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        #status {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>File Input Test</h1>
+    <p>Test if the button correctly opens the file dialog</p>
+    
+    <button id="testBtn">Test File Input</button>
+    <input type="file" id="testFileInput" accept="video/*">
+    
+    <div id="status">Status: Ready</div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const testBtn = document.getElementById('testBtn');
+            const testFileInput = document.getElementById('testFileInput');
+            const status = document.getElementById('status');
+            
+            // Button click handler
+            testBtn.addEventListener('click', function(e) {
+                status.textContent = 'Status: Button clicked';
+                testFileInput.click();
+            });
+            
+            // File input change handler
+            testFileInput.addEventListener('change', function(e) {
+                if (this.files && this.files.length > 0) {
+                    status.textContent = 'Status: File selected: ' + this.files[0].name;
+                } else {
+                    status.textContent = 'Status: No file selected';
+                }
+            });
+        });
+    </script>
+</body>
+</html> 
