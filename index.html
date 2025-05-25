@@ -408,6 +408,24 @@
                     <label for="keyframeInterval">Keyframe Interval</label>
                     <input type="number" id="keyframeInterval" value="10" min="1" max="300" step="1">
                 </div>
+                
+                <div class="control-group">
+                    <label for="includeAudio">Include Audio</label>
+                    <select id="includeAudio">
+                        <option value="true" selected>Yes - Include Audio</option>
+                        <option value="false">No - Video Only</option>
+                    </select>
+                </div>
+                
+                <div class="control-group">
+                    <label for="audioBitrate">Audio Bitrate (kbps)</label>
+                    <select id="audioBitrate">
+                        <option value="64">64 kbps - Low Quality</option>
+                        <option value="128" selected>128 kbps - Standard</option>
+                        <option value="192">192 kbps - High Quality</option>
+                        <option value="256">256 kbps - Very High Quality</option>
+                    </select>
+                </div>
             </div>
         </div>
 
@@ -905,6 +923,8 @@
             const framerate = parseInt(document.getElementById('framerate').value);
             const keyframeInterval = parseInt(document.getElementById('keyframeInterval').value);
             const resolution = document.getElementById('resolution').value;
+            const includeAudio = document.getElementById('includeAudio').value === 'true';
+            const audioBitrate = parseInt(document.getElementById('audioBitrate').value) * 1000; // Convert to bps
             
             let width = originalVideoEl.videoWidth;
             let height = originalVideoEl.videoHeight;
@@ -919,7 +939,9 @@
                 framerate,
                 keyframeInterval,
                 width,
-                height
+                height,
+                includeAudio,
+                audioBitrate
             };
         }
 
@@ -938,8 +960,14 @@
             log('🔧 Starting compression with settings:', 'info');
             log(`📊 Codec: ${settings.codec}, Bitrate: ${settings.bitrate}, Resolution: ${settings.width}x${settings.height}`, 'info');
             
-            // Create muxer
-            const muxer = new Mp4MuxerLib.Muxer({
+            // Check for audio support
+            const hasAudioCodecs = 'AudioEncoder' in window && 'AudioDecoder' in window;
+            const shouldIncludeAudio = settings.includeAudio && hasAudioCodecs;
+            log(`🎵 Audio support: ${hasAudioCodecs ? 'Available' : 'Not available'}`, hasAudioCodecs ? 'success' : 'warning');
+            log(`🎵 Include audio: ${shouldIncludeAudio ? 'Yes' : 'No'}`, shouldIncludeAudio ? 'success' : 'info');
+            
+            // Create muxer with audio support
+            const muxerConfig = {
                 target: new Mp4MuxerLib.ArrayBufferTarget(),
                 video: {
                     codec: settings.codec.startsWith('avc') ? 'avc' : 
@@ -949,19 +977,44 @@
                     height: settings.height
                 },
                 fastStart: 'in-memory'
-            });
+            };
+            
+            // Add audio configuration if supported
+            if (shouldIncludeAudio) {
+                muxerConfig.audio = {
+                    codec: 'aac',
+                    numberOfChannels: 2,
+                    sampleRate: 48000
+                };
+                log(`🎵 Audio encoding enabled (AAC, 48kHz, Stereo, ${settings.audioBitrate/1000}kbps)`, 'success');
+            }
+            
+            const muxer = new Mp4MuxerLib.Muxer(muxerConfig);
 
-            // Setup encoder
+            // Setup video encoder
             const videoEncoder = new VideoEncoder({
                 output: (chunk, meta) => {
                     muxer.addVideoChunk(chunk, meta);
                 },
                 error: (e) => {
-                    throw new Error(`Encoder error: ${e.message}`);
+                    throw new Error(`Video encoder error: ${e.message}`);
                 }
             });
 
-            // Check codec support
+            // Setup audio encoder if supported
+            let audioEncoder = null;
+            if (shouldIncludeAudio) {
+                audioEncoder = new AudioEncoder({
+                    output: (chunk, meta) => {
+                        muxer.addAudioChunk(chunk, meta);
+                    },
+                    error: (e) => {
+                        log(`⚠️ Audio encoder error: ${e.message}`, 'warning');
+                    }
+                });
+            }
+
+            // Check video codec support
             const encoderConfig = {
                 codec: settings.codec,
                 width: settings.width,
@@ -1063,11 +1116,58 @@
                     `💡 Your browser supports WebCodecs but no video encoder configuration works.`;
                 throw new Error(errorMessage);
             }
-            log(`✅ Codec ${encoderConfig.codec} is supported`, 'success');
+            log(`✅ Video codec ${encoderConfig.codec} is supported`, 'success');
 
             videoEncoder.configure(encoderConfig);
             
+            // Configure audio encoder if available
+            if (audioEncoder) {
+                const audioConfig = {
+                    codec: 'mp4a.40.2', // AAC-LC
+                    numberOfChannels: 2,
+                    sampleRate: 48000,
+                    bitrate: settings.audioBitrate // Use user-selected bitrate
+                };
+                
+                try {
+                    const audioSupported = await AudioEncoder.isConfigSupported(audioConfig);
+                    if (audioSupported.supported) {
+                        audioEncoder.configure(audioConfig);
+                        log(`✅ Audio codec AAC is supported (${settings.audioBitrate/1000}kbps)`, 'success');
+                    } else {
+                        log(`⚠️ AAC not supported, audio will be skipped`, 'warning');
+                        audioEncoder = null;
+                    }
+                } catch (e) {
+                    log(`⚠️ Audio encoder configuration failed: ${e.message}`, 'warning');
+                    audioEncoder = null;
+                }
+            }
+            
             updateProgress(10, 'Setting up video processing...');
+
+            // Extract audio using MediaSource API
+            let audioTrack = null;
+            if (audioEncoder) {
+                try {
+                    audioTrack = await extractAudioTrack(file);
+                    if (audioTrack) {
+                        if (audioTrack instanceof AudioBuffer) {
+                            log(`🎵 Audio buffer extracted successfully`, 'success');
+                        } else if (audioTrack && audioTrack.hasAudio) {
+                            log(`🎵 Audio track detected (fallback method)`, 'success');
+                        } else {
+                            log(`⚠️ No audio track found in video`, 'warning');
+                            audioTrack = null;
+                        }
+                    } else {
+                        log(`⚠️ No audio track found in video`, 'warning');
+                    }
+                } catch (e) {
+                    log(`⚠️ Failed to extract audio: ${e.message}`, 'warning');
+                    audioTrack = null;
+                }
+            }
 
             // Create video element for frame extraction
             const video = document.createElement('video');
@@ -1091,7 +1191,17 @@
             log(`📊 Processing ${frameCount} frames at ${settings.framerate}fps`, 'success');
             log(`⏱️ Video duration: ${duration.toFixed(2)}s`, 'info');
 
-            // Process frames
+            // Process audio in parallel if available
+            let audioProcessing = null;
+            if (audioTrack && audioEncoder) {
+                audioProcessing = processAudioTrack(audioTrack, audioEncoder, duration)
+                    .catch(error => {
+                        log(`⚠️ Audio processing failed, continuing without audio: ${error.message}`, 'warning');
+                        return null; // Continue without audio
+                    });
+            }
+
+            // Process video frames
             for (let i = 0; i < frameCount; i++) {
                 const time = i * frameInterval;
                 
@@ -1116,7 +1226,7 @@
                 frame.close();
                 
                 // Update progress
-                const progress = 10 + (i / frameCount) * 80;
+                const progress = 10 + (i / frameCount) * 70;
                 updateProgress(progress, `Processing frame ${i + 1}/${frameCount}`);
                 
                 // Log progress every 30 frames
@@ -1125,12 +1235,22 @@
                 }
             }
 
-            updateProgress(90, 'Finalizing video...');
-            log('🔄 Flushing encoder...', 'info');
+            updateProgress(80, 'Finalizing video...');
+            log('🔄 Flushing video encoder...', 'info');
             
-            // Finish encoding
+            // Finish video encoding
             await videoEncoder.flush();
             videoEncoder.close();
+            
+            // Wait for audio processing to complete
+            if (audioProcessing) {
+                updateProgress(85, 'Finalizing audio...');
+                log('🔄 Waiting for audio processing...', 'info');
+                await audioProcessing;
+            }
+            
+            // Finalize muxer
+            updateProgress(90, 'Creating final video...');
             muxer.finalize();
 
             updateProgress(95, 'Creating download file...');
@@ -1152,16 +1272,249 @@
             const compressedSize = formatFileSize(compressedVideoBlob.size);
             const compressionRatio = ((1 - compressedVideoBlob.size / file.size) * 100).toFixed(1);
             
+            const audioStatus = audioTrack ? '🎵' : '🔇';
             document.getElementById('compressedInfo').textContent = 
-                `${settings.width}x${settings.height} • ${formatDuration(compressedVideoEl.duration)} • ${compressedSize} (${compressionRatio}% smaller)`;
+                `${settings.width}x${settings.height} • ${formatDuration(compressedVideoEl.duration)} • ${compressedSize} (${compressionRatio}% smaller) ${audioStatus}`;
 
             updateProgress(100, 'Compression complete!');
             
             log(`📈 Compression ratio: ${compressionRatio}% smaller`, 'success');
             log(`📁 Original size: ${originalSize} → Compressed size: ${compressedSize}`, 'success');
+            if (audioTrack) {
+                log(`🎵 Audio included in compressed video`, 'success');
+            } else {
+                log(`🔇 No audio track in compressed video`, 'warning');
+            }
 
             // Clean up
             URL.revokeObjectURL(video.src);
+        }
+
+        // Function to extract audio track from video file
+        async function extractAudioTrack(file) {
+            try {
+                // Use Web Audio API to extract audio
+                const arrayBuffer = await file.arrayBuffer();
+                
+                // Create audio context
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                try {
+                    // Decode audio data
+                    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                    await audioContext.close();
+                    
+                    log(`🎵 Audio decoded: ${audioBuffer.duration.toFixed(2)}s, ${audioBuffer.numberOfChannels} channels, ${audioBuffer.sampleRate}Hz`, 'success');
+                    return audioBuffer;
+                } catch (decodeError) {
+                    await audioContext.close();
+                    
+                    // Fallback: try to detect if video has audio
+                    const video = document.createElement('video');
+                    const url = URL.createObjectURL(file);
+                    video.src = url;
+                    
+                    return new Promise((resolve, reject) => {
+                        video.addEventListener('loadedmetadata', () => {
+                            URL.revokeObjectURL(url);
+                            
+                            // Check various ways to detect audio
+                            if (video.webkitAudioDecodedByteCount !== undefined && video.webkitAudioDecodedByteCount > 0) {
+                                log('🎵 Audio detected via webkit property', 'success');
+                                resolve({ hasAudio: true, element: video });
+                            } else if (video.mozHasAudio !== undefined && video.mozHasAudio) {
+                                log('🎵 Audio detected via mozilla property', 'success');
+                                resolve({ hasAudio: true, element: video });
+                            } else {
+                                log('⚠️ Could not decode audio data, trying fallback method', 'warning');
+                                resolve({ hasAudio: false, element: video });
+                            }
+                        });
+                        
+                        video.addEventListener('error', () => {
+                            URL.revokeObjectURL(url);
+                            resolve(null);
+                        });
+                    });
+                }
+            } catch (error) {
+                log(`⚠️ Audio extraction failed: ${error.message}`, 'warning');
+                return null;
+            }
+        }
+
+        // Function to process audio track
+        async function processAudioTrack(audioData, audioEncoder, duration) {
+            try {
+                log('🎵 Starting audio processing...', 'info');
+                
+                // Handle different types of audio data
+                if (audioData instanceof AudioBuffer) {
+                    // Process decoded audio buffer
+                    return await processAudioBuffer(audioData, audioEncoder);
+                } else if (audioData && audioData.hasAudio && audioData.element) {
+                    // Process using media element (fallback)
+                    return await processAudioElement(audioData.element, audioEncoder, duration);
+                } else {
+                    throw new Error('Invalid audio data format');
+                }
+                
+            } catch (error) {
+                log(`⚠️ Audio processing failed: ${error.message}`, 'warning');
+                throw error;
+            }
+        }
+
+        // Process audio buffer (preferred method)
+        async function processAudioBuffer(audioBuffer, audioEncoder) {
+            const sampleRate = 48000; // Target sample rate for AAC
+            const frameSize = 1024; // AAC frame size
+            const numberOfChannels = 2; // Stereo output
+            
+            // Resample if necessary
+            let processedBuffer = audioBuffer;
+            if (audioBuffer.sampleRate !== sampleRate) {
+                log(`🔄 Resampling audio from ${audioBuffer.sampleRate}Hz to ${sampleRate}Hz`, 'info');
+                
+                const offlineContext = new OfflineAudioContext(numberOfChannels, 
+                    Math.ceil(audioBuffer.duration * sampleRate), sampleRate);
+                
+                const source = offlineContext.createBufferSource();
+                source.buffer = audioBuffer;
+                source.connect(offlineContext.destination);
+                source.start();
+                
+                processedBuffer = await offlineContext.startRendering();
+            }
+            
+            // Convert to stereo if mono
+            let leftChannel, rightChannel;
+            if (processedBuffer.numberOfChannels === 1) {
+                leftChannel = processedBuffer.getChannelData(0);
+                rightChannel = leftChannel; // Duplicate mono to both channels
+            } else {
+                leftChannel = processedBuffer.getChannelData(0);
+                rightChannel = processedBuffer.numberOfChannels > 1 ? 
+                    processedBuffer.getChannelData(1) : leftChannel;
+            }
+            
+            // Process audio in chunks
+            const totalFrames = Math.ceil(processedBuffer.length / frameSize);
+            let currentTime = 0;
+            
+            for (let i = 0; i < totalFrames; i++) {
+                const startSample = i * frameSize;
+                const endSample = Math.min(startSample + frameSize, processedBuffer.length);
+                const actualFrameSize = endSample - startSample;
+                
+                if (actualFrameSize === 0) break;
+                
+                // Create audio data for this chunk
+                const audioData = new Float32Array(actualFrameSize * 2);
+                
+                // Interleave samples
+                for (let j = 0; j < actualFrameSize; j++) {
+                    audioData[j * 2] = leftChannel[startSample + j] || 0;
+                    audioData[j * 2 + 1] = rightChannel[startSample + j] || 0;
+                }
+                
+                // Create AudioData frame
+                const audioFrame = new AudioData({
+                    format: 'f32',
+                    sampleRate: sampleRate,
+                    numberOfFrames: actualFrameSize,
+                    numberOfChannels: numberOfChannels,
+                    timestamp: currentTime * 1000000, // Convert to microseconds
+                    data: audioData
+                });
+                
+                // Encode the frame
+                audioEncoder.encode(audioFrame);
+                audioFrame.close();
+                
+                currentTime += actualFrameSize / sampleRate;
+                
+                // Log progress occasionally
+                if (i % 100 === 0) {
+                    const progress = (i / totalFrames) * 100;
+                    log(`🎵 Audio encoding progress: ${progress.toFixed(1)}%`, 'info');
+                }
+            }
+            
+            log('🎵 Audio buffer processing completed', 'success');
+        }
+
+        // Process audio element (fallback method)
+        async function processAudioElement(videoElement, audioEncoder, duration) {
+            log('🎵 Using fallback audio processing method', 'info');
+            
+            return new Promise((resolve, reject) => {
+                try {
+                    // Create audio context
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)({
+                        sampleRate: 48000
+                    });
+                    
+                    // Create media element source
+                    const source = audioContext.createMediaElementSource(videoElement);
+                    
+                    // Create analyser for monitoring
+                    const analyser = audioContext.createAnalyser();
+                    analyser.fftSize = 2048;
+                    
+                    // Create destination for processing
+                    const destination = audioContext.createMediaStreamDestination();
+                    
+                    // Connect audio graph
+                    source.connect(analyser);
+                    analyser.connect(destination);
+                    
+                    // Use MediaRecorder to capture audio
+                    const mediaRecorder = new MediaRecorder(destination.stream, {
+                        mimeType: 'audio/webm; codecs=opus'
+                    });
+                    
+                    const audioChunks = [];
+                    
+                    mediaRecorder.ondataavailable = (event) => {
+                        if (event.data.size > 0) {
+                            audioChunks.push(event.data);
+                        }
+                    };
+                    
+                    mediaRecorder.onstop = async () => {
+                        try {
+                            // Process recorded audio
+                            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                            const arrayBuffer = await audioBlob.arrayBuffer();
+                            
+                            // Decode and re-encode
+                            const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                            await processAudioBuffer(audioBuffer, audioEncoder);
+                            
+                            audioContext.close();
+                            resolve();
+                        } catch (error) {
+                            audioContext.close();
+                            reject(error);
+                        }
+                    };
+                    
+                    // Start recording and play video
+                    mediaRecorder.start();
+                    videoElement.currentTime = 0;
+                    videoElement.muted = true;
+                    
+                    videoElement.addEventListener('ended', () => {
+                        mediaRecorder.stop();
+                    });
+                    
+                    videoElement.play().catch(reject);
+                    
+                } catch (error) {
+                    reject(error);
+                }
+            });
         }
 
         function downloadCompressedVideo() {
@@ -1221,7 +1574,7 @@
                 { value: 'avc1.42E01E', name: 'H.264 (AVC)', fallbacks: ['avc1.42001E', 'avc1.4D001E', 'avc1'] },
                 { value: 'hev1.1.6.L93.B0', name: 'H.265 (HEVC)', fallbacks: ['hvc1.1.6.L93.B0', 'hev1'] },
                 { value: 'vp09.00.10.08', name: 'VP9', fallbacks: ['vp09.00.10.08.01', 'vp9'] },
-                { value: 'av01.0.04M.08', name: 'AV1', fallbacks: ['av01.0.05M.08', 'av1'] }
+                { value: 'av01.0.04M.08', name: 'AV1', fallbacks: ['av01.0.05M.08', 'av01.0.08M.08', 'av1'] }
             ];
             
             const codecSelect = document.getElementById('codec');
