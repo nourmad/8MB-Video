@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MP4 Muxer Test</title>
+</head>
+<body>
+    <h1>MP4 Muxer Loading Test</h1>
+    <div id="results"></div>
+    
+    <script src="mp4-muxer.js"></script>
+    <script>
+        function log(message) {
+            document.getElementById('results').innerHTML += message + '<br>';
+            console.log(message);
+        }
+        
+        window.addEventListener('load', function() {
+            log('Page loaded');
+            
+            setTimeout(() => {
+                log('Checking Mp4Muxer...');
+                log('typeof Mp4Muxer: ' + typeof Mp4Muxer);
+                log('window.Mp4Muxer: ' + typeof window.Mp4Muxer);
+                
+                if (typeof Mp4Muxer !== 'undefined') {
+                    log('✅ Mp4Muxer is available!');
+                    log('Properties: ' + Object.keys(Mp4Muxer).join(', '));
+                    
+                    try {
+                        const target = new Mp4Muxer.ArrayBufferTarget();
+                        log('✅ ArrayBufferTarget created successfully');
+                        
+                        const muxer = new Mp4Muxer.Muxer({
+                            target: target,
+                            video: { codec: 'avc', width: 640, height: 480 },
+                            fastStart: 'in-memory'
+                        });
+                        log('✅ Muxer created successfully');
+                    } catch (e) {
+                        log('❌ Error creating muxer: ' + e.message);
+                    }
+                } else {
+                    log('❌ Mp4Muxer not found');
+                    
+                    // Check all globals
+                    const globals = Object.getOwnPropertyNames(window).filter(name => 
+                        name.toLowerCase().includes('mp4') || name.toLowerCase().includes('mux')
+                    );
+                    log('MP4/Mux related globals: ' + globals.join(', '));
+                }
+            }, 100);
+        });
+    </script>
+</body>
+</html> 

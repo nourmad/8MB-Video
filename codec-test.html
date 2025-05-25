@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Video Codec Capability Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f0f0f0; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; }
+        .result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .warning { background: #fff3cd; color: #856404; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Video Codec Capability Test</h1>
+        <p>This test will check which video codecs and configurations your browser supports.</p>
+        
+        <button onclick="runTests()">🚀 Run Codec Tests</button>
+        
+        <div id="results"></div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.textContent = message;
+            document.getElementById('results').appendChild(div);
+        }
+
+        async function runTests() {
+            document.getElementById('results').innerHTML = '';
+            
+            log('🔍 Starting comprehensive codec tests...', 'info');
+            
+            // Browser info
+            log(`📱 Browser: ${navigator.userAgent}`, 'info');
+            log(`🖥️ Platform: ${navigator.platform}`, 'info');
+            log(`🚀 CPU Cores: ${navigator.hardwareConcurrency}`, 'info');
+            log(`🔒 Secure Context: ${window.isSecureContext}`, 'info');
+            
+            // Check basic API availability
+            if (!('VideoEncoder' in window)) {
+                log('❌ VideoEncoder not available', 'error');
+                return;
+            }
+            log('✅ VideoEncoder available', 'success');
+            
+            if (!VideoEncoder.isConfigSupported) {
+                log('❌ VideoEncoder.isConfigSupported not available', 'error');
+                return;
+            }
+            log('✅ VideoEncoder.isConfigSupported available', 'success');
+            
+            // Test basic codecs
+            const codecs = [
+                'avc1',
+                'avc1.42001E',
+                'avc1.42E01E', 
+                'avc1.4D001E',
+                'avc1.420028',
+                'vp8',
+                'vp9',
+                'vp9.0',
+                'vp09.00.10.08',
+                'hev1',
+                'hvc1',
+                'av1',
+                'av01.0.04M.08'
+            ];
+            
+            const resolutions = [
+                { width: 640, height: 480 },
+                { width: 1280, height: 720 },
+                { width: 1920, height: 1080 }
+            ];
+            
+            const hardwareSettings = [
+                undefined,
+                'no-preference',
+                'prefer-hardware',
+                'prefer-software'
+            ];
+            
+            let successCount = 0;
+            let testCount = 0;
+            
+            for (const codec of codecs) {
+                log(`\n🧪 Testing codec: ${codec}`, 'info');
+                let codecWorking = false;
+                
+                for (const res of resolutions) {
+                    for (const hwAccel of hardwareSettings) {
+                        testCount++;
+                        
+                        const config = {
+                            codec: codec,
+                            width: res.width,
+                            height: res.height,
+                            bitrate: 1000000,
+                            framerate: 30
+                        };
+                        
+                        if (hwAccel) {
+                            config.hardwareAcceleration = hwAccel;
+                        }
+                        
+                        try {
+                            const result = await VideoEncoder.isConfigSupported(config);
+                            if (result.supported) {
+                                log(`✅ ${codec} @ ${res.width}x${res.height} (${hwAccel || 'default'})`, 'success');
+                                successCount++;
+                                codecWorking = true;
+                            }
+                        } catch (e) {
+                            log(`❌ ${codec} @ ${res.width}x${res.height} (${hwAccel || 'default'}): ${e.message}`, 'error');
+                        }
+                    }
+                }
+                
+                if (!codecWorking) {
+                    log(`❌ ${codec} - No working configurations found`, 'error');
+                }
+            }
+            
+            log(`\n📊 Test Summary: ${successCount}/${testCount} configurations supported`, successCount > 0 ? 'success' : 'error');
+            
+            if (successCount === 0) {
+                log(`\n🔧 Troubleshooting Steps:`, 'warning');
+                log(`1. Enable hardware acceleration in Chrome settings`, 'warning');
+                log(`2. Visit chrome://flags and enable "WebCodecs API"`, 'warning');
+                log(`3. Update your graphics drivers`, 'warning');
+                log(`4. Try incognito mode to rule out extensions`, 'warning');
+                log(`5. Check if other browsers work`, 'warning');
+            } else {
+                log(`\n🎉 Your browser supports video encoding!`, 'success');
+                log(`You can use the video compressor with working codecs.`, 'success');
+            }
+        }
+    </script>
+</body>
+</html> 

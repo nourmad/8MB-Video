@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Test</title>
+</head>
+<body>
+    <h1>Debug Test</h1>
+    <div id="log"></div>
+    
+    <script>
+        function log(msg) {
+            document.getElementById('log').innerHTML += msg + '<br>';
+            console.log(msg);
+        }
+        
+        log('1. Page loaded');
+        log('2. Testing WebCodecs API...');
+        
+        if ('VideoEncoder' in window && 'VideoDecoder' in window) {
+            log('✅ WebCodecs API is available');
+        } else {
+            log('❌ WebCodecs API is NOT available');
+        }
+        
+        log('3. Testing browser compatibility...');
+        log('User Agent: ' + navigator.userAgent);
+        log('Browser supports: ');
+        log('- VideoFrame: ' + ('VideoFrame' in window));
+        log('- EncodedVideoChunk: ' + ('EncodedVideoChunk' in window));
+        
+    </script>
+    
+    <script src="mp4-muxer.js"></script>
+    
+    <script>
+        log('4. After mp4-muxer.js loaded');
+        log('5. Testing Mp4Muxer...');
+        
+        setTimeout(() => {
+            log('typeof Mp4Muxer: ' + typeof Mp4Muxer);
+            log('typeof window.Mp4Muxer: ' + typeof window.Mp4Muxer);
+            
+            if (typeof Mp4Muxer !== 'undefined') {
+                log('✅ Mp4Muxer is available');
+                log('Mp4Muxer keys: ' + Object.keys(Mp4Muxer).join(', '));
+                
+                // Test creating basic objects
+                try {
+                    const target = new Mp4Muxer.ArrayBufferTarget();
+                    log('✅ ArrayBufferTarget created');
+                    
+                    const muxer = new Mp4Muxer.Muxer({
+                        target: target,
+                        video: { codec: 'avc', width: 640, height: 480 },
+                        fastStart: 'in-memory'
+                    });
+                    log('✅ Muxer created successfully');
+                    log('🎉 Everything is working!');
+                } catch (e) {
+                    log('❌ Error creating muxer: ' + e.message);
+                }
+            } else {
+                log('❌ Mp4Muxer is NOT available');
+            }
+        }, 200);
+    </script>
+</body>
+</html> 
