@@ -94,6 +94,163 @@
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
+        .settings-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .settings-header h2 {
+            margin: 0;
+            font-size: 1.8rem;
+        }
+
+        .settings-mode-toggle {
+            display: flex;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 4px;
+        }
+
+        .mode-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: transparent;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .mode-btn:hover {
+            color: white;
+        }
+
+        .mode-btn-active {
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+            color: white !important;
+        }
+
+        .settings-panel {
+            display: block;
+        }
+
+        .settings-panel.hidden {
+            display: none;
+        }
+
+        .basic-description {
+            text-align: center;
+            margin-bottom: 30px;
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        .file-size-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .file-size-btn {
+            padding: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            text-align: center;
+        }
+
+        .file-size-btn:hover {
+            border-color: #4ecdc4;
+            background: rgba(78, 205, 196, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .file-size-btn.file-size-active {
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+            border-color: #4ecdc4;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(78, 205, 196, 0.3);
+        }
+
+        .size-number {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .size-description {
+            font-size: 1rem;
+            margin-bottom: 5px;
+            opacity: 0.9;
+        }
+
+        .size-details {
+            font-size: 0.85rem;
+            opacity: 0.7;
+        }
+
+        .basic-audio-control {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .audio-toggle {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .audio-toggle input {
+            display: none;
+        }
+
+        .audio-toggle-slider {
+            position: relative;
+            width: 50px;
+            height: 24px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            margin-right: 12px;
+        }
+
+        .audio-toggle-slider:before {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .audio-toggle input:checked + .audio-toggle-slider {
+            background: #4ecdc4;
+        }
+
+        .audio-toggle input:checked + .audio-toggle-slider:before {
+            transform: translateX(26px);
+        }
+
+        .audio-toggle-label {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
         .controls-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -285,6 +442,25 @@
             .action-buttons {
                 flex-direction: column;
             }
+            
+            .settings-header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+            
+            .file-size-options {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            
+            .file-size-btn {
+                padding: 15px;
+            }
+            
+            .settings-mode-toggle {
+                justify-content: center;
+            }
         }
 
         .hidden {
@@ -361,60 +537,105 @@
 
         <!-- Controls Section -->
         <div class="controls-section">
-            <h2>🎛️ Compression Settings</h2>
-            <div class="controls-grid">
-                <div class="control-group">
-                    <label for="codec">Video Codec</label>
-                    <select id="codec">
-                        <option value="avc1.42E01E">H.264 (AVC) - Best Compatibility</option>
-                        <option value="hev1.1.6.L93.B0">H.265 (HEVC) - Better Compression</option>
-                        <option value="vp09.00.10.08">VP9 - Open Source</option>
-                        <option value="av01.0.04M.08">AV1 - Latest Standard</option>
-                    </select>
+            <div class="settings-header">
+                <h2>🎛️ Compression Settings</h2>
+                <div class="settings-mode-toggle">
+                    <button class="mode-btn mode-btn-active" id="basicModeBtn">📱 Basic</button>
+                    <button class="mode-btn" id="advancedModeBtn">⚙️ Advanced</button>
+                </div>
+            </div>
+            
+            <!-- Basic Settings -->
+            <div id="basicSettings" class="settings-panel">
+                <div class="basic-description">
+                    <p>Choose your target file size. We'll automatically optimize the video settings for the best quality within that limit.</p>
                 </div>
                 
-                <div class="control-group">
-                    <label for="quality">Quality Level</label>
-                    <select id="quality">
-                        <option value="high">High Quality</option>
-                        <option value="medium" selected>Medium Quality</option>
-                        <option value="low">Low Quality</option>
-                        <option value="custom">Custom Bitrate</option>
-                    </select>
+                <div class="file-size-options">
+                    <button class="file-size-btn file-size-active" data-size="8" id="size8mb">
+                        <div class="size-number">8 MB</div>
+                        <div class="size-description">Perfect for sharing</div>
+                        <div class="size-details">Good quality • Fast upload</div>
+                    </button>
+                    
+                    <button class="file-size-btn" data-size="25" id="size25mb">
+                        <div class="size-number">25 MB</div>
+                        <div class="size-description">Balanced quality</div>
+                        <div class="size-details">Higher quality • Moderate size</div>
+                    </button>
+                    
+                    <button class="file-size-btn" data-size="50" id="size50mb">
+                        <div class="size-number">50 MB</div>
+                        <div class="size-description">High quality</div>
+                        <div class="size-details">Best quality • Larger file</div>
+                    </button>
                 </div>
                 
-                <div class="control-group">
-                    <label for="bitrate">Bitrate (Mbps)</label>
-                    <input type="number" id="bitrate" value="2" min="0.1" max="50" step="0.1">
+                <div class="basic-audio-control">
+                    <label class="audio-toggle">
+                        <input type="checkbox" id="basicIncludeAudio" checked>
+                        <span class="audio-toggle-slider"></span>
+                        <span class="audio-toggle-label">🎵 Include Audio</span>
+                    </label>
                 </div>
-                
-                <div class="control-group">
-                    <label for="resolution">Output Resolution</label>
-                    <select id="resolution">
-                        <option value="original">Keep Original</option>
-                        <option value="1920x1080">1080p (1920x1080)</option>
-                        <option value="1280x720">720p (1280x720)</option>
-                        <option value="854x480">480p (854x480)</option>
-                        <option value="640x360">360p (640x360)</option>
-                    </select>
-                </div>
-                
-                <div class="control-group">
-                    <label for="includeAudio">Include Audio</label>
-                    <select id="includeAudio">
-                        <option value="true" selected>Yes - Include Audio</option>
-                        <option value="false">No - Video Only</option>
-                    </select>
-                </div>
-                
-                <div class="control-group">
-                    <label for="audioBitrate">Audio Bitrate (kbps)</label>
-                    <select id="audioBitrate">
-                        <option value="64">64 kbps - Low Quality</option>
-                        <option value="128" selected>128 kbps - Standard</option>
-                        <option value="192">192 kbps - High Quality</option>
-                        <option value="256">256 kbps - Very High Quality</option>
-                    </select>
+            </div>
+            
+            <!-- Advanced Settings -->
+            <div id="advancedSettings" class="settings-panel hidden">
+                <div class="controls-grid">
+                    <div class="control-group">
+                        <label for="codec">Video Codec</label>
+                        <select id="codec">
+                            <option value="avc1.42E01E">H.264 (AVC) - Best Compatibility</option>
+                            <option value="hev1.1.6.L93.B0">H.265 (HEVC) - Better Compression</option>
+                            <option value="vp09.00.10.08">VP9 - Open Source</option>
+                            <option value="av01.0.04M.08">AV1 - Latest Standard</option>
+                        </select>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="quality">Quality Level</label>
+                        <select id="quality">
+                            <option value="high">High Quality</option>
+                            <option value="medium" selected>Medium Quality</option>
+                            <option value="low">Low Quality</option>
+                            <option value="custom">Custom Bitrate</option>
+                        </select>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="bitrate">Bitrate (Mbps)</label>
+                        <input type="number" id="bitrate" value="2" min="0.1" max="50" step="0.1">
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="resolution">Output Resolution</label>
+                        <select id="resolution">
+                            <option value="original">Keep Original</option>
+                            <option value="1920x1080">1080p (1920x1080)</option>
+                            <option value="1280x720">720p (1280x720)</option>
+                            <option value="854x480">480p (854x480)</option>
+                            <option value="640x360">360p (640x360)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="includeAudio">Include Audio</label>
+                        <select id="includeAudio">
+                            <option value="true" selected>Yes - Include Audio</option>
+                            <option value="false">No - Video Only</option>
+                        </select>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="audioBitrate">Audio Bitrate (kbps)</label>
+                        <select id="audioBitrate">
+                            <option value="64">64 kbps - Low Quality</option>
+                            <option value="128" selected>128 kbps - Standard</option>
+                            <option value="192">192 kbps - High Quality</option>
+                            <option value="256">256 kbps - Very High Quality</option>
+                        </select>
+                    </div>
                 </div>
             </div>
         </div>
@@ -501,6 +722,8 @@
         let originalVideo = null;
         let compressedVideoBlob = null;
         let isProcessing = false;
+        let currentSettingsMode = 'basic'; // Track current mode
+        let selectedTargetSize = 8; // Default target size in MB
 
         // DOM elements
         const videoInput = document.getElementById('videoInput');
@@ -514,6 +737,13 @@
         const progressFill = document.getElementById('progressFill');
         const progressText = document.getElementById('progressText');
         const logContainer = document.getElementById('logContainer');
+
+        // Settings mode elements
+        const basicModeBtn = document.getElementById('basicModeBtn');
+        const advancedModeBtn = document.getElementById('advancedModeBtn');
+        const basicSettings = document.getElementById('basicSettings');
+        const advancedSettings = document.getElementById('advancedSettings');
+        const fileSizeBtns = document.querySelectorAll('.file-size-btn');
 
         // Quality presets
         const qualityPresets = {
@@ -538,11 +768,131 @@
                     setupEventListeners();
                     setupDragAndDrop();
                     checkCodecSupport();
+                    loadUserPreferences();
                     log('🎉 Video Compressor ready!', 'success');
                 } else {
                     log('❌ Video Compressor initialization failed', 'error');
                 }
             }, 200);
+        }
+
+        function loadUserPreferences() {
+            // Load saved settings mode preference
+            const savedMode = localStorage.getItem('videoCompressorMode');
+            if (savedMode === 'advanced') {
+                switchToAdvancedMode();
+            } else {
+                switchToBasicMode();
+            }
+            
+            // Load saved target size for basic mode
+            const savedSize = localStorage.getItem('videoCompressorTargetSize');
+            if (savedSize) {
+                selectedTargetSize = parseInt(savedSize);
+                updateSelectedSize();
+            }
+            
+            log(`📋 Loaded user preferences: ${currentSettingsMode} mode`, 'info');
+        }
+
+        function switchToBasicMode() {
+            currentSettingsMode = 'basic';
+            basicModeBtn.classList.add('mode-btn-active');
+            advancedModeBtn.classList.remove('mode-btn-active');
+            basicSettings.classList.remove('hidden');
+            advancedSettings.classList.add('hidden');
+            localStorage.setItem('videoCompressorMode', 'basic');
+            log('📱 Switched to Basic mode', 'info');
+        }
+
+        function switchToAdvancedMode() {
+            currentSettingsMode = 'advanced';
+            advancedModeBtn.classList.add('mode-btn-active');
+            basicModeBtn.classList.remove('mode-btn-active');
+            advancedSettings.classList.remove('hidden');
+            basicSettings.classList.add('hidden');
+            localStorage.setItem('videoCompressorMode', 'advanced');
+            log('⚙️ Switched to Advanced mode', 'info');
+        }
+
+        function updateSelectedSize() {
+            fileSizeBtns.forEach(btn => {
+                const size = parseInt(btn.dataset.size);
+                if (size === selectedTargetSize) {
+                    btn.classList.add('file-size-active');
+                } else {
+                    btn.classList.remove('file-size-active');
+                }
+            });
+        }
+
+        function calculateBasicSettings(targetSizeMB, duration, originalWidth, originalHeight, includeAudio) {
+            // Convert target size to bits
+            const targetSizeBits = targetSizeMB * 8 * 1000 * 1000;
+            
+            // Reserve space for audio if included
+            const audioBitrate = includeAudio ? 128000 : 0; // 128 kbps for audio
+            const audioSizeBits = duration * audioBitrate;
+            
+            // Calculate available space for video
+            const videoSizeBits = Math.max(targetSizeBits - audioSizeBits, targetSizeBits * 0.7);
+            
+            // Calculate video bitrate
+            const videoBitrate = Math.max(videoSizeBits / duration, 100000); // Min 100kbps
+            
+            // Determine resolution based on target size and original resolution
+            let width = originalWidth;
+            let height = originalHeight;
+            
+            if (targetSizeMB <= 8) {
+                // Small target: limit resolution
+                if (width > 1280 || height > 720) {
+                    const aspectRatio = width / height;
+                    if (aspectRatio > 1) {
+                        width = Math.min(width, 1280);
+                        height = Math.round(width / aspectRatio);
+                    } else {
+                        height = Math.min(height, 720);
+                        width = Math.round(height * aspectRatio);
+                    }
+                }
+            } else if (targetSizeMB <= 25) {
+                // Medium target: allow up to 1080p
+                if (width > 1920 || height > 1080) {
+                    const aspectRatio = width / height;
+                    if (aspectRatio > 1) {
+                        width = Math.min(width, 1920);
+                        height = Math.round(width / aspectRatio);
+                    } else {
+                        height = Math.min(height, 1080);
+                        width = Math.round(height * aspectRatio);
+                    }
+                }
+            }
+            // For 50MB+: keep original resolution
+            
+            // Make dimensions even (required for many codecs)
+            width = Math.round(width / 2) * 2;
+            height = Math.round(height / 2) * 2;
+            
+            // Choose codec based on target size
+            let codec = 'avc1.42E01E'; // Default to H.264
+            if (targetSizeMB >= 25) {
+                // For larger targets, try HEVC for better compression
+                codec = 'hev1.1.6.L93.B0';
+            }
+            
+            return {
+                codec: codec,
+                bitrate: Math.round(videoBitrate),
+                framerate: 30,
+                keyframeInterval: 10,
+                width: width,
+                height: height,
+                includeAudio: includeAudio,
+                audioBitrate: audioBitrate,
+                targetSize: targetSizeMB
+            };
         }
 
         function debugLibraryLoading() {
@@ -759,7 +1109,21 @@
             compressBtn.addEventListener('click', startCompression);
             downloadBtn.addEventListener('click', downloadCompressedVideo);
             
-            // Quality preset handling
+            // Mode switching event listeners
+            basicModeBtn.addEventListener('click', switchToBasicMode);
+            advancedModeBtn.addEventListener('click', switchToAdvancedMode);
+            
+            // File size selection event listeners
+            fileSizeBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    selectedTargetSize = parseInt(this.dataset.size);
+                    updateSelectedSize();
+                    localStorage.setItem('videoCompressorTargetSize', selectedTargetSize.toString());
+                    log(`🎯 Target size set to ${selectedTargetSize}MB`, 'info');
+                });
+            });
+            
+            // Quality preset handling (for advanced mode)
             document.getElementById('quality').addEventListener('change', function() {
                 const quality = this.value;
                 const bitrateInput = document.getElementById('bitrate');
@@ -908,31 +1272,52 @@
         }
 
         function getCompressionSettings() {
-            const codec = document.getElementById('codec').value;
-            const bitrate = parseFloat(document.getElementById('bitrate').value) * 1000000; // Convert to bps
-            const framerate = 30; // Default framerate
-            const keyframeInterval = 10; // Default keyframe interval
-            const resolution = document.getElementById('resolution').value;
-            const includeAudio = document.getElementById('includeAudio').value === 'true';
-            const audioBitrate = parseInt(document.getElementById('audioBitrate').value) * 1000; // Convert to bps
-            
-            let width = originalVideoEl.videoWidth;
-            let height = originalVideoEl.videoHeight;
-            
-            if (resolution !== 'original') {
-                [width, height] = resolution.split('x').map(Number);
-            }
+            if (currentSettingsMode === 'basic') {
+                // Basic mode: calculate settings based on target file size
+                const includeAudio = document.getElementById('basicIncludeAudio').checked;
+                const duration = originalVideoEl.duration;
+                const originalWidth = originalVideoEl.videoWidth;
+                const originalHeight = originalVideoEl.videoHeight;
+                
+                const settings = calculateBasicSettings(
+                    selectedTargetSize, 
+                    duration, 
+                    originalWidth, 
+                    originalHeight, 
+                    includeAudio
+                );
+                
+                log(`🎯 Basic mode settings: ${selectedTargetSize}MB target, ${settings.width}x${settings.height}, ${(settings.bitrate/1000000).toFixed(1)}Mbps`, 'info');
+                return settings;
+                
+            } else {
+                // Advanced mode: use form inputs
+                const codec = document.getElementById('codec').value;
+                const bitrate = parseFloat(document.getElementById('bitrate').value) * 1000000; // Convert to bps
+                const framerate = 30; // Default framerate
+                const keyframeInterval = 10; // Default keyframe interval
+                const resolution = document.getElementById('resolution').value;
+                const includeAudio = document.getElementById('includeAudio').value === 'true';
+                const audioBitrate = parseInt(document.getElementById('audioBitrate').value) * 1000; // Convert to bps
+                
+                let width = originalVideoEl.videoWidth;
+                let height = originalVideoEl.videoHeight;
+                
+                if (resolution !== 'original') {
+                    [width, height] = resolution.split('x').map(Number);
+                }
 
-            return {
-                codec,
-                bitrate,
-                framerate,
-                keyframeInterval,
-                width,
-                height,
-                includeAudio,
-                audioBitrate
-            };
+                return {
+                    codec,
+                    bitrate,
+                    framerate,
+                    keyframeInterval,
+                    width,
+                    height,
+                    includeAudio,
+                    audioBitrate
+                };
+            }
         }
 
         async function compressVideo(file, settings) {
